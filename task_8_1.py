@@ -1,5 +1,4 @@
-'''
-== Лото ==
+'''== Лото ==
 
 Правила игры в лото.
 
@@ -52,6 +51,110 @@
 с помощью функции-генератора.
 
 Подсказка: для работы с псевдослучайными числами удобно использовать
-модуль random: http://docs.python.org/3/library/random.html
-'''
+модуль random: http://docs.python.org/3/library/random.html'''
 
+from random import randint, shuffle
+
+
+class Card:
+    def __init__(self, name):
+        self.__row_90 = [element for element in range(1, 91)]
+        self.card_row = [[], [], []]
+        self.generate_card()
+        self.name = name if len(name) else 'iRobot'
+        self.counter = 15
+
+    @staticmethod
+    def more_spaces(line_one, line_two, line_three):
+        while line_one.count(' ') < 4:
+            rand_number = randint(0, 8)
+            if line_two[rand_number] == ' ' and line_three[rand_number] == ' ':
+                continue
+            else:
+                line_one[rand_number] = ' '
+        return line_one
+
+    def generate_card(self):
+        for element in range(0, 63, 7):
+            self.card_row[0].append(self.__row_90.pop(randint(element, (element + 9))))
+            self.card_row[1].append(self.__row_90.pop(randint(element, (element + 8))))
+            self.card_row[2].append(self.__row_90.pop(randint(element, (element + 7))))
+
+        for count in range(0, 9):
+            rand_number = randint(1, 3)
+            if rand_number == 1 and (self.card_row[0]).count(' ') < 4:
+                (self.card_row[0])[count] = ' '
+            elif rand_number == 2 and (self.card_row[1]).count(' ') < 4:
+                (self.card_row[1])[count] = ' '
+            elif rand_number == 3 and (self.card_row[2]).count(' ') < 4:
+                (self.card_row[2])[count] = ' '
+        for count in range(3):
+            self.more_spaces(self.card_row[count], self.card_row[(count - 2) if count == 2 else (count + 1)],
+                             self.card_row[(count + 2) if count == 0 else (count - 1)])
+
+    def __str__(self):
+        show_view = '-Карточка игрока ' + self.name + '--' + '\n'
+        for line in self.card_row:
+            answer = ''
+            for element in line:
+                if len(str(element)) == 2:
+                    answer += ''.join(str(element)) + ' '
+                else:
+                    answer += ' ' + ''.join(str(element)) + ' '
+            show_view += answer + '\n'
+        show_view += '--------------------------' + '\n'
+        return show_view
+
+    def get_my_value(self, value):
+        self.counter -= 1
+        value = value
+        for line in self.card_row:
+            for ind_ele, element in enumerate(line):
+                if element == value:
+                    line[ind_ele] = '\033[31m{}\033[0m'.format('#')
+                    return '\033[0m'
+
+
+class Game:
+    def __init__(self, cls_one, cls_two):
+        self.gamer_one = cls_one
+        self.gamer_two = cls_two
+        self.__num = []
+        self.generate_num()
+
+    def generate_num(self):
+        self.__num = [element for element in range(1, 91)]
+        shuffle(self.__num)
+
+    def start_game(self):
+
+        for count in range(len(self.__num)):
+            game_numeral = self.__num.pop()
+            print(f'Слудующая цифра: {game_numeral} осталось {len(self.__num)}')
+            print(self.gamer_one)
+            print(self.gamer_two)
+            answer_user = input('Закрыть цифру? (y/n)').lower()
+            if answer_user == 'y':
+                if any(game_numeral in line for line in self.gamer_one.card_row):
+                    self.gamer_one.get_my_value(game_numeral)
+                    if self.gamer_one.counter == 0:
+                        return print(f'{self.gamer_one.name} победил')
+                else:
+                    return print(f'{self.gamer_two.name} победил')
+            if answer_user == 'n':
+                if any(game_numeral in line for line in self.gamer_one.card_row):
+                    return print(f'{self.gamer_two.name} победил')
+            if any(game_numeral in line for line in self.gamer_two.card_row):
+                self.gamer_two.get_my_value(game_numeral)
+                if self.gamer_two.counter == 0:
+                    return print(f'{self.gamer_two.name} победил')
+
+
+card_user = Card(input('Введите ваше имя '))
+card_comp = Card('Компьютер')
+game = Game(card_user, card_comp)
+while True:
+    if input('Готовы начинать? ').lower() == 'y':
+        game.start_game()
+    else:
+        break
